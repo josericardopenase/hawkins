@@ -3,13 +3,14 @@ import numpy as np
 from core.helpers import NeuralNetworkHelper as nnh
 
 class Layer:
-    def __init__(self, activation_function=nnh.sigmoid, derivated_activation_function=nnh.sigmoid_derivate, input_size=3, number_of_neurons=1, learning_rate=0.01):
+    def __init__(self, activation_function=nnh.sigmoid, derivated_activation_function=nnh.sigmoid_derivate, input_size=3, number_of_neurons=1, learning_rate=0.01, final_layer=False):
         self.activation_function = activation_function
         self.input_size = input_size
         self.number_of_neurons = number_of_neurons
         self.weights = np.random.rand(number_of_neurons, input_size + 1)
         self.derivated_activation_fun = derivated_activation_function
         self.learning_rate=learning_rate
+        self.final_layer=final_layer
     
     def loss_function(self, loss, result):
         """
@@ -37,26 +38,44 @@ class Linear(Layer):
     class that represents a layer of a neural network.
     """
 
+    def forward_one_line(self, data):
+        """
+        forward propagation
+        """
+        return self.activation_function(np.sum(np.dot(self.weights, np.insert(data, 0, 1))))
+
     def forward(self, data):
         """
         forward propagation
         """
-        result = np.array([])
+        result = np.zeros((self.number_of_neurons))
         for x in range(0, self.number_of_neurons):
-            result[x] = self.activation_function(np.sum(np.dot(self.weights[x], data)))
+            result[x]=self.forward_one_line(data)
+
+        if self.final_layer:
+            return result[0]
         return result
-    
-    def backward(self, data, loss, learning_rate=0.01):
+
+    def backward_one_line(self, data, loss, learning_rate):
         """
         backward propagation
         """
-        weights_mod = np.zeros((self.weights.shape))
-        for x in range(0, self.number_of_neurons):
-            result=self.activation_function(np.sum(np.dot(self.weights[x], np.insert(data, 0, 1))))
-            error=self.loss_function(loss, result)*self.derivated_activation_fun(result)
-            weights_mod[x]=error*data[x]*learning_rate
-        self.weights += weights_mod
-            
+        result=self.activation_function(np.sum(np.dot(self.weights, np.insert(data, 0, 1))))
+        error=self.loss_function(loss, result)*self.derivated_activation_fun(result)
+        return error*learning_rate
+
+    def backward(self, curr_grad, curr_bias, curr_out, prev_act):
+        """
+        backward propagation
+        """
+        d_curr_out = self.derivated_activation_fun(curr_out, init_grad=curr_grad)
+        d_curr_weight = np.dot(d_curr_out, prev_act.T)
+        d_curr_bias = d_curr_out
+        d_prev_act = np.dot(self.weights.T, d_curr_out)
+        return d_prev_act, d_curr_weight, d_curr_bias
+
+
+    
     
 class Conv2D(Layer):
     """
@@ -75,4 +94,3 @@ class Flatten(Layer):
     class that represents a flatten layer of a neural network.
     """
     pass
-

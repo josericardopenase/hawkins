@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="hawkins",
+    name="hawkins-machine-learning",
     version="0.0.1",
     author="Jose Peña Seco",
     author_email="josericardopenase@gmail.com",
